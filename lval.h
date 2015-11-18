@@ -38,6 +38,8 @@ private:
   std::string _sym;
   int _count;
   std::list<LVal *> _lvals;
+
+  friend class Parser;
 };
 
 #endif // LVAL_H

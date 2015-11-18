@@ -7,6 +7,8 @@
 
 #include "lval.h"
 
+struct mpc_parser_t;
+
 class Parser {
 public:
   enum Type {
@@ -17,8 +19,18 @@ public:
   ~Parser();
 
   void init();
+
+  void parse(const char *input);
 private:
   Type _type;
+
+  struct {
+    mpc_parser_t *number;
+    mpc_parser_t *symbol;
+    mpc_parser_t *sexpr;
+    mpc_parser_t *expr;
+    mpc_parser_t *lispy;
+  } _tags;
 };
 
 #endif //PARSER_H
