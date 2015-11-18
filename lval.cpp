@@ -8,6 +8,21 @@
 #include <cstring>
 #include <cstdlib>
 
+LVal::~LVal() {
+    switch(_type) {
+    case LVAL_NUM:
+    case LVAL_ERR:
+    case LVAL_SYM:
+        break;
+    case LVAL_SEXPR:
+        auto it = _lvals.cbegin();
+        auto end = _lvals.cend();
+        for (; it != end; ++it) {
+            delete *it;
+        }
+    }
+}
+
 LVal* LVal::fromNum(long num) {
     LVal *lv = new LVal();
     lv->type = LVAL_NUM;
@@ -57,8 +72,8 @@ std::string LVal::printable() const {
 }
 
 std::string LVal::printableChildren() const {
-    std::list<LVal*>::const_iterator it = _lvals.cbegin();
-    std::list<LVal*>::const_iterat end  = _lvals.cend();
+    auto it = _lvals.cbegin();
+    auto end  = _lvals.cend();
 
     std::string str;
     for (; it != end; ++it) {

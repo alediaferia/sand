@@ -4,6 +4,7 @@ set(sources
   main.c
   mpc.c
   lval.cpp
+  parser.cpp
 )
 
 set(headers

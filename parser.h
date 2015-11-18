@@ -9,10 +9,16 @@
 
 class Parser {
 public:
-    Parser();
+  enum Type {
+    File,
+    Stdin
+  }
+  Parser(Type type);
+  ~Parser();
 
-    void init();
-
+  void init();
+private:
+  Type _type;
 };
 
 #endif //PARSER_H
