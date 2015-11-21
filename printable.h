@@ -1,10 +1,14 @@
 //
 // Created by Alessandro Diaferia on 16/11/2015.
 //
+#ifndef PRINTABLE_H
+#define PRINTABLE_H
+#include <string>
 
-static const size_t MAX_PRINTABLE_BUFSIZE = 1024;
+const size_t MAX_PRINTABLE_BUFSIZE = 1024;
 
 class Printable {
 public:
     virtual std::string printable() const = 0;
-}
+};
+#endif

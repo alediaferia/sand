@@ -25,7 +25,7 @@ LVal::~LVal() {
 
 LVal* LVal::fromNum(long num) {
     LVal *lv = new LVal();
-    lv->type = LVAL_NUM;
+    lv->_type = LVAL_NUM;
     lv->_num = num;
     return lv;
 }
@@ -38,29 +38,34 @@ LVal *LVal::readNum(mpc_ast_t *val) {
 
 LVal *LVal::fromError(std::string &&message) {
   LVal *lv = new LVal();
-  lv._err = std::move(message);
-  lv._type = LVAL_ERR;
+  lv->_err = std::move(message);
+  lv->_type = LVAL_ERR;
   return lv;
+}
+
+LVal *LVal::fromVal(mpc_ast_t *val) {
+    if (strstr(val->tag, "number")) { return LVal::readNum(val); }
+    if (strstr(val->tag, "symbol")) { return LVal::read }
 }
 
 LVal *LVal::fromSymbol(std::string &&symbol) {
   LVal *lv = new LVal();
-  lv._sym = std::move(symbol);
-  lv._type = LVAL_SYM;
+  lv->_sym = std::move(symbol);
+  lv->_type = LVAL_SYM;
   return lv;
 }
 
 std::string LVal::printable() const {
   char *buff = new char[MAX_PRINTABLE_BUFSIZE];
-  swich (_type) {
+  switch (_type) {
   case LVAL_NUM:
       snprintf(buff, MAX_PRINTABLE_BUFSIZE, "%li", _num);
       break;
   case LVAL_ERR:
-      snprintf(buff, MAX_PRINTABLE_BUFSIZE, "Error: %s", _err);
+      snprintf(buff, MAX_PRINTABLE_BUFSIZE, "Error: %s", _err.c_str());
       break;
   case LVAL_SYM:
-      snprintf(buff, MAX_PRINTABLE_BUFSIZE, "%s", _sym);
+      snprintf(buff, MAX_PRINTABLE_BUFSIZE, "%s", _sym.c_str());
       break;
   case LVAL_SEXPR:
       snprintf(buff, MAX_PRINTABLE_BUFSIZE, "%s", printableChildren().c_str());
@@ -77,8 +82,8 @@ std::string LVal::printableChildren() const {
 
     std::string str;
     for (; it != end; ++it) {
-        str.append((*it)->printable());
-        str.append(' ');
+        str += (*it)->printable();
+        str += " ";
     }
 
     return str;

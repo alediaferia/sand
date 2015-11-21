@@ -1,4 +1,7 @@
 #include "console.h"
+#include "parser.h"
+
+#include <iostream>
 
 #ifdef UNIX
 #include <signal.h>
@@ -19,15 +22,27 @@ void _int_handler(int sig) {
     }
 }
 
-Console::Console() :_running(false) {
+Console::Console() : _running(false),
+                     _prompt(SAND_PS)
+ {
     s_instance = this;
+    _parser = new Parser(Parser::Stdin);
+}
+
+Console::~Console() {
+    delete _parser;
 }
 
 void Console::run() {
 #ifdef UNIX
     signal(SIGINT, _int_handler);
 #endif
-    while (_running) {
+    std::cout << SAND_CONSOLE_HEADER;
 
+    while (_running) {
+        std::string input;
+        std::cout << _prompt;
+        std::getline(std::cin, input);
+        std::shared_ptr<Printable> p = _parser->parse(input);
     }
 }

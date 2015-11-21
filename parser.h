@@ -7,6 +7,8 @@
 
 #include "lval.h"
 
+#include <memory>
+
 struct mpc_parser_t;
 
 class Parser {
@@ -14,13 +16,16 @@ public:
   enum Type {
     File,
     Stdin
-  }
+};
   Parser(Type type);
   ~Parser();
 
-  void init();
+  std::shared_ptr<Printable> parse(const std::string &input);
 
-  void parse(const char *input);
+  const char* currentInputTag() const;
+protected:
+  Parser();
+
 private:
   Type _type;
 
@@ -31,6 +36,8 @@ private:
     mpc_parser_t *expr;
     mpc_parser_t *lispy;
   } _tags;
+
+  const char *_inputTag;
 };
 
 #endif //PARSER_H
