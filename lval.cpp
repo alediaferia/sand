@@ -8,24 +8,31 @@
 #include <cstring>
 #include <cstdlib>
 
+LVal::LVal() :
+_type(Uninitialized),
+_num(0) {
+
+}
+
 LVal::~LVal() {
     switch(_type) {
-    case LVAL_NUM:
-    case LVAL_ERR:
-    case LVAL_SYM:
+    case NUM:
+    case ERR:
+    case SYM:
         break;
-    case LVAL_SEXPR:
+    case SEXPR:
         auto it = _lvals.cbegin();
         auto end = _lvals.cend();
         for (; it != end; ++it) {
             delete *it;
         }
+        break;
     }
 }
 
 LVal* LVal::fromNum(long num) {
     LVal *lv = new LVal();
-    lv->_type = LVAL_NUM;
+    lv->_type = NUM;
     lv->_num = num;
     return lv;
 }
@@ -39,36 +46,58 @@ LVal *LVal::readNum(mpc_ast_t *val) {
 LVal *LVal::fromError(std::string &&message) {
   LVal *lv = new LVal();
   lv->_err = std::move(message);
-  lv->_type = LVAL_ERR;
+  lv->_type = ERR;
   return lv;
 }
 
 LVal *LVal::fromVal(mpc_ast_t *val) {
     if (strstr(val->tag, "number")) { return LVal::readNum(val); }
-    if (strstr(val->tag, "symbol")) { return LVal::read }
+    if (strstr(val->tag, "symbol")) { return LVal::fromSymbol(std::string(val->contents)); }
+
+    LVal *x = nullptr;
+    if (strcmp(val->tag, ">") == 0) {
+        x = new LVal();
+        x->_type = LVal::SEXPR;
+    }
+
+    if (strcmp(val->tag, "sexpr")) {
+        x = new LVal();
+        x->_type = LVal::SEXPR;
+    }
+
+    for (int i = 0; i < val->children_num; i++) {
+        if (strcmp(val->children[i]->contents, "(") == 0) { continue; }
+        if (strcmp(val->children[i]->contents, ")") == 0) { continue; }
+        if (strcmp(val->children[i]->contents, "}") == 0) { continue; }
+        if (strcmp(val->children[i]->contents, "{") == 0) { continue; }
+        if (strcmp(val->children[i]->tag,  "regex") == 0) { continue; }
+        x->_lvals.push_back(LVal::fromVal(val->children[i]));
+    }
+
+    return x;
 }
 
 LVal *LVal::fromSymbol(std::string &&symbol) {
   LVal *lv = new LVal();
   lv->_sym = std::move(symbol);
-  lv->_type = LVAL_SYM;
+  lv->_type = SYM;
   return lv;
 }
 
 std::string LVal::printable() const {
   char *buff = new char[MAX_PRINTABLE_BUFSIZE];
   switch (_type) {
-  case LVAL_NUM:
+  case NUM:
       snprintf(buff, MAX_PRINTABLE_BUFSIZE, "%li", _num);
       break;
-  case LVAL_ERR:
+  case ERR:
       snprintf(buff, MAX_PRINTABLE_BUFSIZE, "Error: %s", _err.c_str());
       break;
-  case LVAL_SYM:
+  case SYM:
       snprintf(buff, MAX_PRINTABLE_BUFSIZE, "%s", _sym.c_str());
       break;
-  case LVAL_SEXPR:
-      snprintf(buff, MAX_PRINTABLE_BUFSIZE, "%s", printableChildren().c_str());
+  case SEXPR:
+      snprintf(buff, MAX_PRINTABLE_BUFSIZE, "(%s)", printableChildren().c_str());
       break;
   }
   std::string str(buff);

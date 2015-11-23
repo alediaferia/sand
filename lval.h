@@ -14,10 +14,12 @@ struct mpc_ast_t;
 
 class LVal : public Printable {
 public:
-  enum Type { LVAL_NUM, LVAL_ERR, LVAL_SYM, LVAL_SEXPR };
+  enum Type {
+    Uninitialized = 0,
+    NUM, ERR, SYM, SEXPR };
 
   LVal();
-  LVal(const LVal &);
+  //LVal(const LVal &);
   ~LVal();
 
   static LVal *fromVal(mpc_ast_t *val);
@@ -36,7 +38,6 @@ private:
   long _num;
   std::string _err;
   std::string _sym;
-  int _count;
   std::list<LVal *> _lvals;
 
   friend class Parser;

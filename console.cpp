@@ -8,10 +8,10 @@
 #endif
 
 static const char *SAND_CONSOLE_HEADER =
-" \
-  Sand Version 0.0.0.1 \
-  Press Ctrl+C to Quit \
-";
+"\
+Sand Version 0.0.0.1\n\
+Press Ctrl+C to Quit\n\
+\n";
 
 static const char *SAND_PS = "sand> ";
 
@@ -34,6 +34,7 @@ Console::~Console() {
 }
 
 void Console::run() {
+    _running = true;
 #ifdef UNIX
     signal(SIGINT, _int_handler);
 #endif
@@ -44,5 +45,6 @@ void Console::run() {
         std::cout << _prompt;
         std::getline(std::cin, input);
         std::shared_ptr<Printable> p = _parser->parse(input);
+        std::cout << p.get()->printable() << std::endl;
     }
 }
