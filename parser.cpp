@@ -26,13 +26,7 @@ Parser::Parser() : _inputTag(nullptr) {
     _tags.lispy  = mpc_new("lispy");
 
     mpca_lang(MPCA_LANG_DEFAULT,
-    "                                          \
-      number : /-?[0-9]+/ ;                    \
-      symbol : '+' | '-' | '*' | '/' ;         \
-      sexpr  : '(' <expr>* ')' ;               \
-      expr   : <number> | <symbol> | <sexpr> ; \
-      lispy  : /^/ <expr>* /$/ ;               \
-    ",
+    SAND_GRAMMAR,
     _tags.number, _tags.symbol, _tags.sexpr, _tags.expr, _tags.lispy);
 }
 
@@ -59,19 +53,19 @@ Parser::~Parser() {
     );
 }
 
-std::shared_ptr<Printable> Parser::parse(const std::string &input) {
-    mpc_result_t r;
+Either<mpc_ast_t*,ErrorRef> Parser::parse(const std::string &input) {
+  mpc_result_t r;
+  if (mpc_parse(currentInputTag(), input.c_str(), _tags.lispy, &r)) {
+    return Either<mpc_ast_t*,ErrorRef>::Left((mpc_ast_t*)r.output);
+  }
 
-    if (mpc_parse(currentInputTag(), input.c_str(), _tags.lispy, &r)) {
-        LVal *x = LVal::fromVal((mpc_ast_t*)r.output);
-        return std::shared_ptr<Printable>(x);
-    } else {
-        const char *cstr_err = mpc_err_string(r.error);
-        std::string err(cstr_err);
-        free((void*)cstr_err);
-        mpc_err_delete(r.error);
-        return std::shared_ptr<Printable>(new Error(err));
-    }
+  // A parsing error occurred
+  char *err_str = mpc_err_string(r.error);
+  std::string error(err_str);
+  free(err_str);
+  mpc_err_delete(r.error);
+
+  return Either<mpc_ast_t*,ErrorRef>::Right(ErrorRef(new Error(error)));
 }
 
 const char* Parser::currentInputTag() const {

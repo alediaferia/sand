@@ -21,4 +21,7 @@ private:
     std::string _message;
     void *_data;
 };
+
+typedef std::shared_ptr<Error> ErrorRef;
+
 #endif

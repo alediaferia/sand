@@ -10,6 +10,7 @@ set(sources
   error.cpp
   console.cpp
   parser.cpp
+  engine.cpp
 )
 
 add_executable(cmsfun ${sources})

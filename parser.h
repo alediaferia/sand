@@ -6,10 +6,13 @@
 #define PARSER_H
 
 #include "lval.h"
+#include "either.h"
+#include "error.h"
 
 #include <memory>
 
 struct mpc_parser_t;
+struct mpc_ast_t;
 
 class Parser {
 public:
@@ -20,7 +23,7 @@ public:
   Parser(Type type);
   ~Parser();
 
-  std::shared_ptr<Printable> parse(const std::string &input);
+  Either<mpc_ast_t*, ErrorRef> parse(const std::string &input);
 
   const char* currentInputTag() const;
 protected:

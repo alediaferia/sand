@@ -1,7 +1,10 @@
 #include "console.h"
 #include "parser.h"
+#include "engine.h"
 
 #include <iostream>
+
+#include "mpc.h"
 
 #ifdef UNIX
 #include <signal.h>
@@ -35,6 +38,7 @@ Console::~Console() {
 
 void Console::run() {
     _running = true;
+    Engine engine;
 #ifdef UNIX
     signal(SIGINT, _int_handler);
 #endif
@@ -44,7 +48,12 @@ void Console::run() {
         std::string input;
         std::cout << _prompt;
         std::getline(std::cin, input);
-        std::shared_ptr<Printable> p = _parser->parse(input);
-        std::cout << p.get()->printable() << std::endl;
+        auto p = _parser->parse(input);
+        if (p.isRight()) {
+            std::cout << p.right()->printable() << std::endl;
+        } else {
+            LValRef lval = engine.eval(p.left());
+            std::cout << "-> " << lval->printable() << std::endl;
+        }
     }
 }

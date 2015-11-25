@@ -11,4 +11,6 @@ class Printable {
 public:
     virtual std::string printable() const = 0;
 };
+typedef std::shared_ptr<Printable> PrintableRef;
+
 #endif
