@@ -24,7 +24,8 @@ public:
     NOERR = 0,
     LERR_DIV_ZERO,
     LERR_BAD_OP,
-    LERR_BAD_NUM
+    LERR_BAD_NUM,
+    LERR_BAD_SEXPR_FORMAT
   };
 
   LVal();
@@ -39,6 +40,11 @@ public:
 
   std::string printable() const;
 
+  LValRef pop();
+
+protected:
+  std::list<LValRef>& lvals();
+
 private:
   std::string printableChildren() const;
   std::string printableError() const;
@@ -50,7 +56,6 @@ private:
   std::string _sym;
   std::list<LValRef> _lvals;
 
-  friend class Parser;
   friend class Engine;
 };
 

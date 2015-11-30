@@ -9,9 +9,11 @@ class Engine {
 public:
     Engine();
 
-    LValRef eval(mpc_ast_t *t);
+    //LValRef eval(mpc_ast_t *t);
+    LValRef eval(LValRef);
 protected:
-    LValRef evalOp(LValRef first, char *op, LValRef second);
+    LValRef evalOp(LValRef parent, const char *op);
+    LValRef evalSExpr(LValRef val);
 };
 
 #endif // ENGINE_H

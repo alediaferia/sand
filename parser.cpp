@@ -53,10 +53,11 @@ Parser::~Parser() {
     );
 }
 
-Either<mpc_ast_t*,ErrorRef> Parser::parse(const std::string &input) {
+Either<LValRef,ErrorRef> Parser::parse(const std::string &input) {
   mpc_result_t r;
   if (mpc_parse(currentInputTag(), input.c_str(), _tags.lispy, &r)) {
-    return Either<mpc_ast_t*,ErrorRef>::Left((mpc_ast_t*)r.output);
+    LValRef lval = LVal::fromVal((mpc_ast_t*)r.output);
+    return Either<LValRef,ErrorRef>::Left(lval);
   }
 
   // A parsing error occurred
@@ -65,7 +66,7 @@ Either<mpc_ast_t*,ErrorRef> Parser::parse(const std::string &input) {
   free(err_str);
   mpc_err_delete(r.error);
 
-  return Either<mpc_ast_t*,ErrorRef>::Right(ErrorRef(new Error(error)));
+  return Either<LValRef,ErrorRef>::Right(ErrorRef(new Error(error)));
 }
 
 const char* Parser::currentInputTag() const {

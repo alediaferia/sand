@@ -23,7 +23,7 @@ public:
   Parser(Type type);
   ~Parser();
 
-  Either<mpc_ast_t*, ErrorRef> parse(const std::string &input);
+  Either<LValRef, ErrorRef> parse(const std::string &input);
 
   const char* currentInputTag() const;
 protected:

@@ -50,7 +50,7 @@ void Console::run() {
         std::getline(std::cin, input);
         auto p = _parser->parse(input);
         if (p.isRight()) {
-            std::cout << p.right()->printable() << std::endl;
+            std::cout << "parser: " << p.right()->printable() << std::endl;
         } else {
             LValRef lval = engine.eval(p.left());
             std::cout << "-> " << lval->printable() << std::endl;

@@ -23,6 +23,8 @@ LVal::~LVal() {
         break;
     case SEXPR:
         break;
+    default:
+        ;
     }
 }
 
@@ -107,6 +109,7 @@ std::string LVal::printableError() const {
   static std::string err_div_zero("Cannot divide by zero");
   static std::string err_bad_op("Unsupported operation");
   static std::string err_bad_num("Bad number");
+  static std::string err_bad_sexpr_format("Unexpected value for S-Expression");
 
   switch(_err) {
     case LERR_DIV_ZERO:
@@ -115,6 +118,8 @@ std::string LVal::printableError() const {
       return err_bad_op;
     case LERR_BAD_NUM:
       return err_bad_num;
+    case LERR_BAD_SEXPR_FORMAT:
+      return err_bad_sexpr_format;
     default:
       (void)0;
   }
@@ -132,5 +137,14 @@ std::string LVal::printableChildren() const {
     }
 
     return str;
+}
+
+std::list<LValRef>& LVal::lvals() {
+  return _lvals;
+}
+
+LValRef LVal::pop() {
+  auto it = _lvals.begin();
+  return (*_lvals.erase(it));
 }
 
