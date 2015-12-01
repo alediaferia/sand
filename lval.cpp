@@ -49,17 +49,19 @@ LValRef LVal::fromError(ErrorType type) {
 }
 
 LValRef LVal::fromVal(mpc_ast_t *val) {
-    if (strstr(val->tag, "number")) { return LVal::readNum(val); }
-    if (strstr(val->tag, "symbol")) { return LVal::fromSymbol(std::string(val->contents)); }
+    if (strstr(val->tag, "number")) {
+      return LVal::readNum(val); 
+    }
+    if (strstr(val->tag, "symbol")) {
+      return LVal::fromSymbol(std::string(val->contents));
+    }
 
-    LVal *x = nullptr;
+    LVal *x = new LVal();
     if (strcmp(val->tag, ">") == 0) {
-        x = new LVal();
         x->_type = LVal::SEXPR;
     }
 
-    if (strcmp(val->tag, "sexpr")) {
-        x = new LVal();
+    if (strstr(val->tag, "sexpr")) {
         x->_type = LVal::SEXPR;
     }
 
@@ -144,7 +146,8 @@ std::list<LValRef>& LVal::lvals() {
 }
 
 LValRef LVal::pop() {
-  auto it = _lvals.begin();
-  return (*_lvals.erase(it));
+  LValRef r(_lvals.front());
+  _lvals.erase(_lvals.begin());
+  return r;
 }
 

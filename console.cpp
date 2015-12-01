@@ -44,8 +44,8 @@ void Console::run() {
 #endif
     std::cout << SAND_CONSOLE_HEADER;
 
+    std::string input;
     while (_running) {
-        std::string input;
         std::cout << _prompt;
         std::getline(std::cin, input);
         auto p = _parser->parse(input);

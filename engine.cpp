@@ -43,7 +43,9 @@ LValRef Engine::evalSExpr(LValRef val) {
 
   it = val->lvals().begin();
   for (; it != val->lvals().end(); ++it) {
-    return *(val->lvals().erase(it));
+    if ((*it)->_type == LVal::ERR) {
+        return *(val->lvals().erase(it));
+    }
   }
 
   if (val->lvals().size() == 0) { return val; }
@@ -73,9 +75,7 @@ LValRef Engine::evalOp(LValRef parent, const char *op) {
       first = parent->pop();
     }
 
-    it = parent->lvals().cbegin();
-    end = parent->lvals().cend();
-    for (; it != end; ++it) {
+    while (parent->_lvals.size()) {
       LValRef second = parent->pop();
 
       if (strcmp(op, "+") == 0) { first->_num += second->_num; }
