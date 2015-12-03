@@ -18,7 +18,11 @@ class LVal : public Printable {
 public:
   enum Type {
     Uninitialized = 0,
-    NUM, ERR, SYM, SEXPR 
+    NUM,
+    ERR,
+    SYM,
+    SEXPR,
+    QEXPR
   };
   enum ErrorType {
     NOERR = 0,

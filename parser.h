@@ -14,6 +14,18 @@
 struct mpc_parser_t;
 struct mpc_ast_t;
 
+enum Token {
+  tok_eof = -1,
+
+  // commands
+  tok_def = -2,
+  tok_extern = -3,
+
+  // primary
+  tok_identifier = -4,
+  tok_number = -5
+};
+
 class Parser {
 public:
   enum Type {
@@ -29,6 +41,8 @@ public:
 protected:
   Parser();
 
+  Token readToken(const std::string &input);
+
 private:
   Type _type;
 
@@ -36,11 +50,14 @@ private:
     mpc_parser_t *number;
     mpc_parser_t *symbol;
     mpc_parser_t *sexpr;
+    mpc_parser_t *qexpr;
     mpc_parser_t *expr;
     mpc_parser_t *lispy;
   } _tags;
 
   const char *_inputTag;
+  std::string _identifier;
+  long _number;
 };
 
 #endif //PARSER_H

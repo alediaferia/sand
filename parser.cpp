@@ -5,12 +5,14 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <cstdio>
 
 static const char *SAND_GRAMMAR =
 "                                          \
   number : /-?[0-9]+/ ;                    \
   symbol : '+' | '-' | '*' | '/' ;         \
   sexpr  : '(' <expr>* ')' ;               \
+  qexpr  : '{' <expr>* '}' ;               \
   expr   : <number> | <symbol> | <sexpr> ; \
   lispy  : /^/ <expr>* /$/ ;               \
 ";
@@ -18,16 +20,20 @@ static const char *SAND_GRAMMAR =
 
 static const char *SAND_STDIN_TAG = "<console>";
 
+static const std::string def_id("def");
+static const std::string extern_id("extern");
+
 Parser::Parser() : _inputTag(nullptr) {
     _tags.number = mpc_new("number");
     _tags.symbol = mpc_new("symbol");
     _tags.sexpr  = mpc_new("sexpr");
+    _tags.qexpr  = mpc_new("qexpr");
     _tags.expr   = mpc_new("expr");
     _tags.lispy  = mpc_new("lispy");
 
     mpca_lang(MPCA_LANG_DEFAULT,
     SAND_GRAMMAR,
-    _tags.number, _tags.symbol, _tags.sexpr, _tags.expr, _tags.lispy);
+    _tags.number, _tags.symbol, _tags.sexpr, _tags.qexpr, _tags.expr, _tags.lispy);
 }
 
 Parser::Parser(Type type) : Parser() {
@@ -44,11 +50,12 @@ Parser::Parser(Type type) : Parser() {
 
 Parser::~Parser() {
     mpc_cleanup(
-      5,
+      6,
       _tags.number,
       _tags.symbol,
       _tags.sexpr,
       _tags.expr,
+      _tags.qexpr,
       _tags.lispy
     );
 }
@@ -71,4 +78,43 @@ Either<LValRef,ErrorRef> Parser::parse(const std::string &input) {
 
 const char* Parser::currentInputTag() const {
     return SAND_STDIN_TAG;
+}
+
+Token Parser::readToken(const std::string &input) {
+  static int lastChr = ' '; // the last read char from input
+
+  auto it = input.cbegin();
+  auto end = input.cend();
+  while (it != end && isspace(lastChr)) {
+    lastChr = *(++it);
+  }
+
+  if (isalpha(lastChr)) { /// identifier: [a-zA-Z][a-zA-Z0-9]*
+    _identifier = lastChr;  
+    while (it != end && isalnum((lastChr = *(++it))))
+      _identifier += lastChr;
+
+    if (_identifier == def_id)
+      return tok_def;
+    if (_identifier == extern_id)
+      return tok_extern;
+    return tok_identifier;
+  }
+
+  if (isdigit(lastChr)) { // number [0-9]
+    std::string num;
+    do {
+      num += lastChr;
+    } while (it != end && isdigit((lastChr = *(++it))));
+    _number = strtol(num.c_str(), nullptr, 10);
+    
+    return tok_number; 
+  }
+
+  if (lastChr == '#') {
+    // just a loop for ignoring everything after the #
+    while (it != end && (lastChr = *(++it)) != '\n')
+      if (lastChr != '\r' && lastChr != EOF)
+        continue;
+  }
 }
