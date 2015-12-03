@@ -23,7 +23,10 @@ enum Token {
 
   // primary
   tok_identifier = -4,
-  tok_number = -5
+  tok_number = -5,
+
+  // other
+  tok_unfinished = -99
 };
 
 class Parser {
@@ -41,7 +44,7 @@ public:
 protected:
   Parser();
 
-  Token readToken(const std::string &input);
+  int readToken(const std::string &input);
 
 private:
   Type _type;

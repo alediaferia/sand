@@ -80,7 +80,7 @@ const char* Parser::currentInputTag() const {
     return SAND_STDIN_TAG;
 }
 
-Token Parser::readToken(const std::string &input) {
+int Parser::readToken(const std::string &input) {
   static int lastChr = ' '; // the last read char from input
 
   auto it = input.cbegin();
@@ -117,4 +117,10 @@ Token Parser::readToken(const std::string &input) {
       if (lastChr != '\r' && lastChr != EOF)
         continue;
   }
+
+  if (it == end)
+    return tok_eof;
+
+  // don't know what to do with this char
+  return lastChr;
 }
