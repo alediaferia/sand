@@ -4,24 +4,14 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-#include "printable.h"
+#include "expr_ast.h"
+#include <memory>
 
-class Error : public Printable {
-public:
-    Error(const std::string &message);
-    Error(std::string &&message);
-    virtual ~Error();
+#include <llvm/IR/Value.h>
 
-    //void setData(void *data, bool takeOwnership = false);
-    //void *data() const;
+using namespace llvm;
 
-    virtual std::string printable() const;
-
-private:
-    std::string _message;
-    void *_data;
-};
-
-typedef std::shared_ptr<Error> ErrorRef;
+std::unique_ptr<ExprAST> Error(const char *message);
+Value* ErrorV(const char *message);
 
 #endif

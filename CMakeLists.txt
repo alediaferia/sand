@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.1.0)
 
 find_package(LLVM REQUIRED CONFIG)
 
@@ -20,15 +20,13 @@ llvm_map_components_to_libnames(llvm_libs support core irreader)
 project(cmsfun)
 set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wc++11-extensions")
 
-set(sources
-  main.cpp
-  mpc.c
-  lval.cpp
-  parser.cpp
-  error.cpp
-  console.cpp
-  parser.cpp
-  engine.cpp
+file(GLOB SRCS
+  "*.cpp"
 )
 
-add_executable(cmsfun ${sources})
+file(GLOB HDRS
+  "*.h"
+  )
+
+
+add_executable(cmsfun ${SRCS} ${HDRS})

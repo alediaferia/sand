@@ -7,6 +7,8 @@ class NumberExprAST : public ExprAST {
 public: 
   NumberExprAST(long val);
 
+  Value* codegen() override;
+
 private:
   long _val;
 };
