@@ -18,6 +18,8 @@ public:
       std::vector<std::string> args);
     
     Function *codegen();
+    
+    std::string name() const;
 
 private:
   IRBuilder<> *_builder;

@@ -29,3 +29,7 @@ Function* PrototypeAST::codegen() {
     
     return F;
 }
+
+std::string PrototypeAST::name() const {
+    return _name;
+}

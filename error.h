@@ -5,6 +5,8 @@
 #define ERROR_H
 
 #include "expr_ast.h"
+#include "prototype_ast.h"
+
 #include <memory>
 
 #include <llvm/IR/Value.h>
@@ -13,5 +15,6 @@ using namespace llvm;
 
 std::unique_ptr<ExprAST> Error(const char *message);
 Value* ErrorV(const char *message);
+std::unique_ptr<PrototypeAST> ErrorP(const char *message);
 
 #endif
