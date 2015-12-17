@@ -48,12 +48,31 @@ void Console::run() {
     while (_running) {
         std::cout << _prompt;
         std::getline(std::cin, input);
-        auto p = _parser->parse(input);
-        if (p.isRight()) {
-            std::cout << "parser: " << p.right()->printable() << std::endl;
-        } else {
-            LValRef lval = engine.eval(p.left());
-            std::cout << "-> " << lval->printable() << std::endl;
+//        auto p = _parser->parse(input);
+//        if (p.isRight()) {
+//            std::cout << "parser: " << p.right()->printable() << std::endl;
+//        } else {
+//            LValRef lval = engine.eval(p.left());
+//            std::cout << "-> " << lval->printable() << std::endl;
+//        }
+
+        auto it = input.cbegin();
+        auto end = input.cend();
+        switch (_parser->readToken(it, end)) {
+            case tok_eof:
+                return;
+            case tok_def:
+            {
+                auto fast = _parser->parseDefinition(it, end);
+                engine.eval(std::move(fast));
+            }
+                break;
+            default:
+            {
+                auto expr = _parser->parseTopLevelExpr(it, end);
+                engine.eval(std::move(expr));
+            }
+                break;
         }
     }
 }

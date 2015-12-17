@@ -4,6 +4,7 @@
 #include "number_expr_ast.h"
 #include "var_expr_ast.h"
 #include "call_expr_ast.h"
+#include "binary_expr_ast.h"
 #include "error.h"
 
 #include <iostream>
@@ -110,11 +111,37 @@ std::unique_ptr<ExprAST> Parser::parseExpression(s_cursor_t &it, const s_cursor_
     if (!lhs)
         return nullptr;
 
-    return parseBinOpRHS(it, end);
+    return parseBinOpRHS(0, std::move(lhs), it, end);
 }
 
-std::unique_ptr<ExprAST> Parser::parseBinOpRHS(s_cursor_t &it, const s_cursor_t &end) {
+std::unique_ptr<ExprAST> Parser::parseBinOpRHS(int prec,
+                                               std::unique_ptr<ExprAST> lhs,
+                                               s_cursor_t &it, const s_cursor_t &end) {
+    while (true) {
+        int prec_ = currentTokPrecedence();
 
+        if (prec_ < prec) {
+            return lhs;
+        }
+
+        int binOp = _lastTok;
+        readToken(it, end);
+
+        auto rhs = parsePrimary(it, end);
+
+        if (!rhs)
+            return nullptr;
+
+        int nextPrec = currentTokPrecedence();
+        if (prec_ < nextPrec) {
+            rhs = parseBinOpRHS(prec_ + 1, std::move(rhs), it, end);
+
+            if (!rhs)
+                return nullptr;
+        }
+
+        lhs = llvm::make_unique<BinaryExprAST>(binOp, std::move(lhs), std::move(rhs));
+    }
 }
 
 std::unique_ptr<ExprAST> Parser::parsePrimary(s_cursor_t &it, const s_cursor_t &end) {

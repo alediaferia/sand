@@ -59,7 +59,8 @@ public:
     std::unique_ptr<ExprAST> parseNumberExpr(s_cursor_t &it, const s_cursor_t &end);
     std::unique_ptr<ExprAST> parseParenExpr(s_cursor_t &it, const s_cursor_t &end);
     std::unique_ptr<PrototypeAST> parseExtern(s_cursor_t &it, const s_cursor_t &end);
-    std::unique_ptr<ExprAST> parseBinOpRHS(s_cursor_t &it, const s_cursor_t &end);
+    std::unique_ptr<ExprAST> parseBinOpRHS(int prec, std::unique_ptr<ExprAST> rhs,
+                                           s_cursor_t &it, const s_cursor_t &en);
 
     /// primary
     ///   ::= identifierexpr

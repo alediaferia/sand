@@ -29,4 +29,4 @@ file(GLOB HDRS
   )
 
 
-add_executable(cmsfun ${SRCS} ${HDRS})
+add_executable(cmsfun ${SRCS} ${HDRS} ${llvm_libs})

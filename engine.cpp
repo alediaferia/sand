@@ -95,3 +95,7 @@ LValRef Engine::evalOp(LValRef parent, const char *op) {
     return first;
 }
 
+Value* Engine::eval(std::unique_ptr<FunctionAST> fast) {
+    return fast->codegen();
+}
+
