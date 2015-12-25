@@ -12,9 +12,12 @@
 #include "function_ast.h"
 #include "prototype_ast.h"
 #include "expr_ast.h"
+#include "symbol_table.h"
 
 #include <memory>
 
+#include <llvm/IR/Module.h>
+#include <llvm/IR/IRBuilder.h>
 struct mpc_parser_t;
 struct mpc_ast_t;
 
@@ -91,6 +94,9 @@ private:
     std::string _identifier;
     long _number;
     int _lastTok;
+    std::shared_ptr<Module> _module;
+    IRBuilder<> _builder;
+    SymbolTable _symTable;
 };
 
 #endif //PARSER_H

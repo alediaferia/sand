@@ -23,6 +23,7 @@ static const char *SAND_GRAMMAR =
   lispy  : /^/ <expr>* /$/ ;               \
 ";
 
+static const char *SAND_MODULE = "sand";
 
 static const char *SAND_STDIN_TAG = "<console>";
 
@@ -36,7 +37,9 @@ static const std::map<char, int> BIN_OP_PRECEDENCE = {
     {'*', 40},
 };
 
-Parser::Parser() : _inputTag(nullptr) {
+Parser::Parser() : _inputTag(nullptr),
+    _builder(getGlobalContext()) {
+
     _tags.number = mpc_new("number");
     _tags.symbol = mpc_new("symbol");
     _tags.sexpr  = mpc_new("sexpr");
@@ -47,6 +50,8 @@ Parser::Parser() : _inputTag(nullptr) {
     mpca_lang(MPCA_LANG_DEFAULT,
     SAND_GRAMMAR,
     _tags.number, _tags.symbol, _tags.sexpr, _tags.qexpr, _tags.expr, _tags.lispy);
+
+    _module = std::shared_ptr<Module>(new Module(SAND_MODULE, getGlobalContext()));
 }
 
 Parser::Parser(Type type) : Parser() {
@@ -101,7 +106,7 @@ std::unique_ptr<FunctionAST> Parser::parseDefinition(s_cursor_t &it, const s_cur
         return nullptr;
 
     if (auto e = parseExpression(it, end))
-        return llvm::make_unique<FunctionAST>(std::move(proto), std::move(e));
+        return llvm::make_unique<FunctionAST>(&_builder, _module, std::move(proto), std::move(e), _symTable);
 
     return nullptr; // no definition so far
 }
@@ -140,7 +145,7 @@ std::unique_ptr<ExprAST> Parser::parseBinOpRHS(int prec,
                 return nullptr;
         }
 
-        lhs = llvm::make_unique<BinaryExprAST>(binOp, std::move(lhs), std::move(rhs));
+        lhs = llvm::make_unique<BinaryExprAST>(&_builder, binOp, std::move(lhs), std::move(rhs));
     }
 }
 
@@ -162,7 +167,7 @@ std::unique_ptr<ExprAST> Parser::parseIdentifierExpr(s_cursor_t &it, const s_cur
     readToken(it, end);
 
     if (_lastTok != '(')
-        return llvm::make_unique<VarExprAST>(idName);
+        return llvm::make_unique<VarExprAST>(&_builder, idName, _symTable);
 
     readToken(it, end);
 
@@ -186,7 +191,7 @@ std::unique_ptr<ExprAST> Parser::parseIdentifierExpr(s_cursor_t &it, const s_cur
 
     readToken(it, end); // eat ')'
 
-    return llvm::make_unique<CallExprAST>(idName, args);
+    return llvm::make_unique<CallExprAST>(&_builder, _module, idName, std::move(args));
 }
 
 std::unique_ptr<ExprAST> Parser::parseNumberExpr(s_cursor_t &it, const s_cursor_t &end) {
@@ -231,14 +236,18 @@ std::unique_ptr<PrototypeAST> Parser::parsePrototype(s_cursor_t &it, const s_cur
 
     readToken(it, end);
 
-    return llvm::make_unique<PrototypeAST>(fnName, std::move(argNames));
+    return llvm::make_unique<PrototypeAST>(&_builder, _module, fnName, std::move(argNames));
 }
 
 std::unique_ptr<FunctionAST> Parser::parseTopLevelExpr(s_cursor_t &it, const s_cursor_t &end) {
     if (auto e = parseExpression(it, end)) {
-        auto proto = llvm::make_unique<PrototypeAST>("__anon_expr",
+        auto proto = llvm::make_unique<PrototypeAST>(&_builder, _module, "__anon_expr",
                                                      std::vector<std::string>());
-        return llvm::make_unique<FunctionAST>(std::move(proto), std::move(e));
+        return llvm::make_unique<FunctionAST>(&_builder,
+                                              _module,
+                                              std::move(proto),
+                                              std::move(e),
+                                              _symTable);
     }
 
     return nullptr;
