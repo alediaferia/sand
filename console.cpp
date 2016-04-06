@@ -58,7 +58,7 @@ void Console::run() {
 
         auto it = input.cbegin();
         auto end = input.cend();
-        switch (_parser->readToken(it, end)) {
+        switch (_parser->getNextToken(it, end)) {
             case tok_eof:
                 return;
             case tok_def:
@@ -67,10 +67,14 @@ void Console::run() {
                 engine.eval(std::move(fast));
             }
                 break;
+            break;
             default:
             {
                 auto expr = _parser->parseTopLevelExpr(it, end);
-                engine.eval(std::move(expr));
+                if (expr != nullptr) {
+                    auto value = engine.eval(std::move(expr));
+                    value->dump();
+                }
             }
                 break;
         }

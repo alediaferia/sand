@@ -19,6 +19,7 @@ public:
     LValRef eval(LValRef);
 
     Value* eval(std::unique_ptr<FunctionAST> fast);
+    Value* eval(std::unique_ptr<ExprAST> expr);
     // void evaluate(Value *v);
 protected:
     LValRef evalOp(LValRef parent, const char *op);

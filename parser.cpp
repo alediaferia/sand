@@ -50,7 +50,7 @@ Parser::Parser() : _inputTag(nullptr),
     mpca_lang(MPCA_LANG_DEFAULT,
     SAND_GRAMMAR,
     _tags.number, _tags.symbol, _tags.sexpr, _tags.qexpr, _tags.expr, _tags.lispy);
-
+    _lastChar = ' ';
     _module = std::shared_ptr<Module>(new Module(SAND_MODULE, getGlobalContext()));
 }
 
@@ -99,7 +99,7 @@ const char* Parser::currentInputTag() const {
 }
 
 std::unique_ptr<FunctionAST> Parser::parseDefinition(s_cursor_t &it, const s_cursor_t &end) {
-    readToken(it, end); // eat 'def'
+    getNextToken(it, end);
 
     auto proto = parsePrototype(it, end);
     if (!proto)
@@ -129,8 +129,8 @@ std::unique_ptr<ExprAST> Parser::parseBinOpRHS(int prec,
             return lhs;
         }
 
-        int binOp = _lastTok;
-        readToken(it, end);
+        int binOp = _curTok;
+        getNextToken(it, end);
 
         auto rhs = parsePrimary(it, end);
 
@@ -150,7 +150,7 @@ std::unique_ptr<ExprAST> Parser::parseBinOpRHS(int prec,
 }
 
 std::unique_ptr<ExprAST> Parser::parsePrimary(s_cursor_t &it, const s_cursor_t &end) {
-    switch (_lastTok) {
+    switch (_curTok) {
         case tok_identifier:
             return parseIdentifierExpr(it, end);
         case tok_number:
@@ -164,53 +164,53 @@ std::unique_ptr<ExprAST> Parser::parsePrimary(s_cursor_t &it, const s_cursor_t &
 
 std::unique_ptr<ExprAST> Parser::parseIdentifierExpr(s_cursor_t &it, const s_cursor_t &end) {
     std::string idName = _identifier;
-    readToken(it, end);
+    getNextToken(it, end);
 
-    if (_lastTok != '(')
+    if (_lastChar != '(')
         return llvm::make_unique<VarExprAST>(&_builder, idName, _symTable);
 
-    readToken(it, end);
+    getNextToken(it, end);
 
     std::vector<std::unique_ptr<ExprAST>> args;
-    if (_lastTok != ')') {
+    if (_lastChar != ')') {
         while (true) {
             if (auto arg = parseExpression(it, end))
                 args.push_back(std::move(arg));
             else
                 return nullptr;
 
-            if (_lastTok == ')')
+            if (_lastChar == ')')
                 break;
 
-            if (_lastTok != ',')
+            if (_lastChar != ',')
                 return Error("Expected ')' or ',' in argument list");
 
-            readToken(it, end);
+            getNextToken(it, end);
         }
     }
 
-    readToken(it, end); // eat ')'
+    getNextToken(it, end); // eat ')'
 
     return llvm::make_unique<CallExprAST>(&_builder, _module, idName, std::move(args));
 }
 
 std::unique_ptr<ExprAST> Parser::parseNumberExpr(s_cursor_t &it, const s_cursor_t &end) {
     auto result = llvm::make_unique<NumberExprAST>(_number);
-    readToken(it, end);
+    getNextToken(it, end);
     return std::move(result);
 }
 
 std::unique_ptr<ExprAST> Parser::parseParenExpr(s_cursor_t &it, const s_cursor_t &end) {
-    readToken(it, end); // eating current '('
+    getNextToken(it, end); // eating current '('
     auto v = parseExpression(it, end);
     if (!v)
         return nullptr;
-    readToken(it, end);
+    getNextToken(it, end);
     return v;
 }
 
 std::unique_ptr<PrototypeAST> Parser::parseExtern(s_cursor_t &it, const s_cursor_t &end) {
-    readToken(it, end);
+    getNextToken(it, end);
 
     return parsePrototype(it, end);
 }
@@ -218,23 +218,24 @@ std::unique_ptr<PrototypeAST> Parser::parseExtern(s_cursor_t &it, const s_cursor
 /// prototype
 ///   ::= id '(' id* ')'
 std::unique_ptr<PrototypeAST> Parser::parsePrototype(s_cursor_t &it, const s_cursor_t &end) {
-    if (_lastTok != tok_identifier)
+    if (_curTok != tok_identifier)
         return ErrorP("Expected function name in prototype");
 
     std::string fnName = _identifier;
-    readToken(it, end);
+    getNextToken(it, end);
 
-    if (_lastTok != '(' )
+    if ( _curTok != '(' )
         return ErrorP("Expected '(' in prototype");
 
     std::vector<std::string> argNames;
-    while (readToken(it, end) == tok_identifier)
+    while (getNextToken(it, end) == tok_identifier) {
         argNames.push_back(_identifier);
+    }
 
-    if (_lastTok != ')')
+    if ( _curTok != ')' )
         return ErrorP("Expected ')' in prototype");
 
-    readToken(it, end);
+    getNextToken(it, end); // eat ')'
 
     return llvm::make_unique<PrototypeAST>(&_builder, _module, fnName, std::move(argNames));
 }
@@ -254,53 +255,62 @@ std::unique_ptr<FunctionAST> Parser::parseTopLevelExpr(s_cursor_t &it, const s_c
 }
 
 int Parser::readToken(s_cursor_t &it, const s_cursor_t &end) {
-  _lastTok = ' '; // the last read char from input
+    // skipping any whitespace
+    while (it != end && isspace(_lastChar))
+      _lastChar = *(it++); // getting char and advancing cursor
 
-  while (it != end && isspace(_lastTok)) {
-    _lastTok = *(++it);
-  }
+    if (isalpha(_lastChar)) { /// identifier: [a-zA-Z][a-zA-Z0-9]*
+        _identifier = _lastChar;
+        while (it != end && isalnum((_lastChar = *(it++))))
+          _identifier += _lastChar;
 
-  if (isalpha(_lastTok)) { /// identifier: [a-zA-Z][a-zA-Z0-9]*
-    _identifier = _lastTok;
-    while (it != end && isalnum((_lastTok = *(++it))))
-      _identifier += _lastTok;
+        if (_identifier == def_id)
+            return tok_def;
+        else if (_identifier == extern_id)
+            return tok_extern;
 
-    if (_identifier == def_id)
-      return tok_def;
-    if (_identifier == extern_id)
-      return tok_extern;
-    return tok_identifier;
-  }
+        return tok_identifier;
+    }
 
-  if (isdigit(_lastTok)) { // number [0-9]
-    std::string num;
-    do {
-      num += _lastTok;
-    } while (it != end && isdigit((_lastTok = *(++it))));
-    _number = strtol(num.c_str(), nullptr, 10);
-    
-    return tok_number; 
-  }
+    if (isdigit(_lastChar)) { // number [0-9]
+        std::string num;
+        do {
+          num += _lastChar;
+        } while (it != end && isdigit((_lastChar = *(it++))));
+        _number = strtol(num.c_str(), nullptr, 10);
 
-  if (_lastTok == '#') {
-    // just a loop for ignoring everything after the #
-    while (it != end && (_lastTok = *(++it)) != '\n')
-      if (_lastTok != '\r' && _lastTok != EOF)
-        continue;
-  }
+        return tok_number;
+    }
 
-  if (it == end)
-    return tok_eof;
+    if (_lastChar == '#') {
+        // just a loop for ignoring everything after the #
+        do
+            _lastChar = *(it++);
+        while (it != end && _lastChar != '\n' && _lastChar != '\r');
 
-  // don't know what to do with this char
-  return _lastTok;
+        if (_lastChar != EOF)
+        return readToken(it, end);
+    }
+
+    if (it == end || _lastChar == EOF) {
+      _lastChar = tok_eof;
+    }
+
+    // don't know what to do with this char
+    int thisChar = _lastChar;
+    _lastChar = *(it++);
+    return thisChar;
+}
+
+int Parser::getNextToken(s_cursor_t &b, const s_cursor_t &end) {
+    return _curTok = readToken(b, end);
 }
 
 int Parser::currentTokPrecedence() {
-    if (!isascii(_lastTok))
+    if (!isascii(_curTok))
         return -1;
 
-    int p = BIN_OP_PRECEDENCE.at(_lastTok);
+    int p = BIN_OP_PRECEDENCE.at(_curTok);
     if (p <= 0)
         return -1;
 

@@ -33,6 +33,8 @@ enum Token {
     tok_number = -5,
     
     // other
+    tok_parenop = -6,
+    tok_parencl = -7,
     tok_unfinished = -99
 };
 
@@ -52,7 +54,7 @@ public:
     /*
      * Reads the next token from a string iterator.
      */
-    int readToken(s_cursor_t &b, const s_cursor_t &end);
+    int getNextToken(s_cursor_t &b, const s_cursor_t &end);
     
     std::unique_ptr<FunctionAST> parseDefinition(s_cursor_t &it, const s_cursor_t &end);
     std::unique_ptr<PrototypeAST> parsePrototype(s_cursor_t &it, const s_cursor_t &end);
@@ -75,6 +77,8 @@ public:
 protected:
     Parser();
 
+    int readToken(s_cursor_t &b, const s_cursor_t &end);
+
 private:
     int currentTokPrecedence();
     
@@ -93,7 +97,8 @@ private:
     const char *_inputTag;
     std::string _identifier;
     long _number;
-    int _lastTok;
+    int _lastChar;
+    int _curTok;
     std::shared_ptr<Module> _module;
     IRBuilder<> _builder;
     SymbolTable _symTable;
