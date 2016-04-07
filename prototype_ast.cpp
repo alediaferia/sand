@@ -1,7 +1,5 @@
 #include "prototype_ast.h"
 
-#include <memory>
-
 PrototypeAST::PrototypeAST(IRBuilder<> *builder,
                            std::shared_ptr<Module> module,
                            const std::string &name,

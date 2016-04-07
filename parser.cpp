@@ -1,5 +1,4 @@
 #include "parser.h"
-#include "mpc.h"
 
 #include "number_expr_ast.h"
 #include "var_expr_ast.h"
@@ -12,16 +11,6 @@
 #include <cstdio>
 
 #include <map>
-
-static const char *SAND_GRAMMAR =
-"                                          \
-  number : /-?[0-9]+/ ;                    \
-  symbol : '+' | '-' | '*' | '/' ;         \
-  sexpr  : '(' <expr>* ')' ;               \
-  qexpr  : '{' <expr>* '}' ;               \
-  expr   : <number> | <symbol> | <sexpr> ; \
-  lispy  : /^/ <expr>* /$/ ;               \
-";
 
 static const char *SAND_MODULE = "sand";
 
@@ -40,16 +29,6 @@ static const std::map<char, int> BIN_OP_PRECEDENCE = {
 Parser::Parser() : _inputTag(nullptr),
     _builder(getGlobalContext()) {
 
-    _tags.number = mpc_new("number");
-    _tags.symbol = mpc_new("symbol");
-    _tags.sexpr  = mpc_new("sexpr");
-    _tags.qexpr  = mpc_new("qexpr");
-    _tags.expr   = mpc_new("expr");
-    _tags.lispy  = mpc_new("lispy");
-
-    mpca_lang(MPCA_LANG_DEFAULT,
-    SAND_GRAMMAR,
-    _tags.number, _tags.symbol, _tags.sexpr, _tags.qexpr, _tags.expr, _tags.lispy);
     _lastChar = ' ';
     _module = std::shared_ptr<Module>(new Module(SAND_MODULE, getGlobalContext()));
 }
@@ -67,32 +46,8 @@ Parser::Parser(Type type) : Parser() {
 }
 
 Parser::~Parser() {
-    mpc_cleanup(
-      6,
-      _tags.number,
-      _tags.symbol,
-      _tags.sexpr,
-      _tags.expr,
-      _tags.qexpr,
-      _tags.lispy
-    );
 }
 
-//Either<LValRef,ErrorRef> Parser::parse(const std::string &input) {
-//  mpc_result_t r;
-//  if (mpc_parse(currentInputTag(), input.c_str(), _tags.lispy, &r)) {
-//    LValRef lval = LVal::fromVal((mpc_ast_t*)r.output);
-//    return Either<LValRef,ErrorRef>::Left(lval);
-//  }
-//
-//  // A parsing error occurred
-//  char *err_str = mpc_err_string(r.error);
-//  std::string error(err_str);
-//  free(err_str);
-//  mpc_err_delete(r.error);
-//
-//  return Either<LValRef,ErrorRef>::Right(ErrorRef(new Error(error)));
-//}
 
 const char* Parser::currentInputTag() const {
     return SAND_STDIN_TAG;
@@ -166,23 +121,23 @@ std::unique_ptr<ExprAST> Parser::parseIdentifierExpr(s_cursor_t &it, const s_cur
     std::string idName = _identifier;
     getNextToken(it, end);
 
-    if (_lastChar != '(')
+    if (_curTok != '(')
         return llvm::make_unique<VarExprAST>(&_builder, idName, _symTable);
 
     getNextToken(it, end);
 
     std::vector<std::unique_ptr<ExprAST>> args;
-    if (_lastChar != ')') {
+    if (_curTok != ')') {
         while (true) {
             if (auto arg = parseExpression(it, end))
                 args.push_back(std::move(arg));
             else
                 return nullptr;
 
-            if (_lastChar == ')')
+            if (_curTok == ')' || _curTok == tok_eof)
                 break;
 
-            if (_lastChar != ',')
+            if (_curTok != ',')
                 return Error("Expected ')' or ',' in argument list");
 
             getNextToken(it, end);
@@ -228,8 +183,11 @@ std::unique_ptr<PrototypeAST> Parser::parsePrototype(s_cursor_t &it, const s_cur
         return ErrorP("Expected '(' in prototype");
 
     std::vector<std::string> argNames;
-    while (getNextToken(it, end) == tok_identifier) {
+    getNextToken(it, end);
+    while (_curTok == tok_identifier) {
         argNames.push_back(_identifier);
+        if (getNextToken(it, end) == ',')
+            getNextToken(it, end);
     }
 
     if ( _curTok != ')' )
@@ -302,17 +260,19 @@ int Parser::readToken(s_cursor_t &it, const s_cursor_t &end) {
     return thisChar;
 }
 
-int Parser::getNextToken(s_cursor_t &b, const s_cursor_t &end) {
+int Parser::getNextToken(s_cursor_t &b, const s_cursor_t &end, bool cleanBuffer) {
+    if (cleanBuffer)
+        _lastChar = ' ';
     return _curTok = readToken(b, end);
 }
 
-int Parser::currentTokPrecedence() {
+int Parser::currentTokPrecedence() const {
     if (!isascii(_curTok))
         return -1;
 
-    int p = BIN_OP_PRECEDENCE.at(_curTok);
-    if (p <= 0)
+    auto it = BIN_OP_PRECEDENCE.find(_curTok);
+    if (it == BIN_OP_PRECEDENCE.end()) {
         return -1;
-
-    return p;
+    }
+    return it->second;
 }

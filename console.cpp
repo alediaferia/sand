@@ -4,8 +4,6 @@
 
 #include <iostream>
 
-#include "mpc.h"
-
 #ifdef UNIX
 #include <signal.h>
 #endif
@@ -48,26 +46,19 @@ void Console::run() {
     while (_running) {
         std::cout << _prompt;
         std::getline(std::cin, input);
-//        auto p = _parser->parse(input);
-//        if (p.isRight()) {
-//            std::cout << "parser: " << p.right()->printable() << std::endl;
-//        } else {
-//            LValRef lval = engine.eval(p.left());
-//            std::cout << "-> " << lval->printable() << std::endl;
-//        }
 
         auto it = input.cbegin();
         auto end = input.cend();
-        switch (_parser->getNextToken(it, end)) {
+        switch (_parser->getNextToken(it, end, true)) {
             case tok_eof:
                 return;
             case tok_def:
             {
                 auto fast = _parser->parseDefinition(it, end);
-                engine.eval(std::move(fast));
+                auto value = engine.eval(std::move(fast));
+                value->dump();
             }
                 break;
-            break;
             default:
             {
                 auto expr = _parser->parseTopLevelExpr(it, end);

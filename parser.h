@@ -5,7 +5,6 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "lval.h"
 #include "either.h"
 #include "error.h"
 
@@ -18,9 +17,6 @@
 
 #include <llvm/IR/Module.h>
 #include <llvm/IR/IRBuilder.h>
-struct mpc_parser_t;
-struct mpc_ast_t;
-
 enum Token {
     tok_eof = -1,
     
@@ -48,13 +44,11 @@ public:
     };
     Parser(Type type);
     ~Parser();
-    
-    // Either<LValRef, ErrorRef> parse(const std::string &input);
 
     /*
      * Reads the next token from a string iterator.
      */
-    int getNextToken(s_cursor_t &b, const s_cursor_t &end);
+    int getNextToken(s_cursor_t &b, const s_cursor_t &end, bool cleanBuffer = false);
     
     std::unique_ptr<FunctionAST> parseDefinition(s_cursor_t &it, const s_cursor_t &end);
     std::unique_ptr<PrototypeAST> parsePrototype(s_cursor_t &it, const s_cursor_t &end);
@@ -80,20 +74,11 @@ protected:
     int readToken(s_cursor_t &b, const s_cursor_t &end);
 
 private:
-    int currentTokPrecedence();
+    int currentTokPrecedence() const;
     
 private:
     Type _type;
-    
-    struct {
-        mpc_parser_t *number;
-        mpc_parser_t *symbol;
-        mpc_parser_t *sexpr;
-        mpc_parser_t *qexpr;
-        mpc_parser_t *expr;
-        mpc_parser_t *lispy;
-    } _tags;
-    
+
     const char *_inputTag;
     std::string _identifier;
     long _number;

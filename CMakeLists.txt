@@ -27,10 +27,7 @@ file(GLOB SRCS
 file(GLOB HDRS
   "*.h"
   )
-set(TMP_SRCS
-  mpc.c
-)
 
 
-add_executable(cmsfun ${SRCS} ${TMP_SRCS} ${HDRS} )
+add_executable(cmsfun ${SRCS} ${HDRS} )
 target_link_libraries(cmsfun ${llvm_libs} ${core} ${irreader})

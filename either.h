@@ -1,6 +1,8 @@
 #ifndef EITHER_H
 #define EITHER_H
 
+#include <memory>
+
 template <class T1, class T2> 
 class Either
 {
