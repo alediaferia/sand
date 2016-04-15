@@ -14,7 +14,8 @@ Sand Version 0.0.0.1\n\
 Press Ctrl+C to Quit\n\
 \n";
 
-static const char *SAND_PS = "sand> ";
+static const char *SAND_PS = "-=> ";
+static const char *SAND_MODULE = "sand";
 
 static Console *s_instance = nullptr;
 void _int_handler(int sig) {
@@ -24,10 +25,11 @@ void _int_handler(int sig) {
 }
 
 Console::Console() : _running(false),
-                     _prompt(SAND_PS)
+                     _prompt(SAND_PS),
+                     _module(new Module(SAND_MODULE, getGlobalContext()))
  {
-    s_instance = this;
-    _parser = new Parser(Parser::Stdin);
+     s_instance = this;
+     _parser = new Parser(Parser::Stdin, _module);
 }
 
 Console::~Console() {
@@ -56,7 +58,7 @@ void Console::run() {
             {
                 auto fast = _parser->parseDefinition(it, end);
                 auto value = engine.eval(std::move(fast));
-                value->dump();
+                std::cout << value << std::endl;
             }
                 break;
             default:

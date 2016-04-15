@@ -4,15 +4,8 @@
 #include "var_expr_ast.h"
 #include "call_expr_ast.h"
 #include "binary_expr_ast.h"
-#include "error.h"
 
 #include <iostream>
-#include <cstdlib>
-#include <cstdio>
-
-#include <map>
-
-static const char *SAND_MODULE = "sand";
 
 static const char *SAND_STDIN_TAG = "<console>";
 
@@ -26,14 +19,14 @@ static const std::map<char, int> BIN_OP_PRECEDENCE = {
     {'*', 40},
 };
 
-Parser::Parser() : _inputTag(nullptr),
+Parser::Parser(const std::shared_ptr<Module> &module) : _inputTag(nullptr),
     _builder(getGlobalContext()) {
 
     _lastChar = ' ';
-    _module = std::shared_ptr<Module>(new Module(SAND_MODULE, getGlobalContext()));
+    _module = module;
 }
 
-Parser::Parser(Type type) : Parser() {
+Parser::Parser(Type type, const std::shared_ptr<Module> &module) : Parser(module) {
   _type = type;
   switch (type) {
   case Stdin:

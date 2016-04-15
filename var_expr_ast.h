@@ -11,8 +11,7 @@
 class VarExprAST : public ExprAST {
 public:
     VarExprAST(IRBuilder<> *builder,
-             const std::string &name,
-               SymbolTable &st);
+             const std::string &name, SymbolTable &st);
     
     Value* codegen() override;
 

@@ -7,7 +7,7 @@ VarExprAST::VarExprAST(IRBuilder<> *builder,
                        SymbolTable &st) :
 _builder(builder),
   _name(name),
-_st(st)
+  _st(st)
 {}
 
 Value *VarExprAST::codegen() {

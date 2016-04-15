@@ -42,7 +42,7 @@ public:
         File,
         Stdin
     };
-    Parser(Type type);
+    Parser(Type type, const std::shared_ptr<Module> &module);
     ~Parser();
 
     /*
@@ -69,7 +69,7 @@ public:
     
     const char* currentInputTag() const;
 protected:
-    Parser();
+    Parser(const std::shared_ptr<Module> &module);
 
     int readToken(s_cursor_t &b, const s_cursor_t &end);
 
